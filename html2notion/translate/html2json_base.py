@@ -140,10 +140,12 @@ class Html2JsonBase:
             text_params["url"] = href
         elif tag_name == 'img':
             src = tag_soup.get('src', "")
+            notion_file_upload_id = tag_soup.get('notion-file-upload-id')
             # only support external image here.
             if not src:
                 logger.warning("Image src is empty")
             text_params["src"] = src
+            text_params["notion-file-upload-id"] = notion_file_upload_id
         return
 
     # https://developers.notion.com/reference/request-limits
@@ -207,6 +209,7 @@ class Html2JsonBase:
 
     def generate_image(self, **kwargs):
         source = kwargs.get("src", "")
+        notion_file_upload_id = kwargs.get("notion-file-upload-id")
         if not source or not is_valid_url(source):
             return
         self.import_stat.add_notion_image(source)
@@ -220,6 +223,10 @@ class Html2JsonBase:
                 }
             }
         }
+        if notion_file_upload_id:
+            image_block["image"]["type"] = "file_upload"
+            image_block["image"].pop("external")
+            image_block["image"].update(file_upload=dict(id=notion_file_upload_id))
         return image_block
 
     def generate_text(self, **kwargs):
