@@ -258,7 +258,7 @@ class Html2JsonBase:
         created_time = kwargs.get("created_time", "")
 
         property_map = {
-            "Title": {"title": [{"text": {"content": title}}]} if title else None,
+            "title": {"id": "title", "type": "title", "title": [{"text": {"content": title}}]} if title else None,
             "URL": {"url": url, "type": "url"} if url else None,
             "Tags": {"type": "multi_select", "multi_select": [{"name": tag} for tag in tags]} if tags else None,
             "Created": {"date": {"start": created_time}, "type": "date"} if created_time else None,
