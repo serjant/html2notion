@@ -141,11 +141,15 @@ class Html2JsonBase:
         elif tag_name == 'img':
             src = tag_soup.get('src', "")
             notion_file_upload_id = tag_soup.get('data-notion-file-upload-id')
+            mime_type = tag_soup.get('data-coda-mime-type')
+            if not mime_type:
+                mime_type = tag_soup.get('data-notion-file-mime-type')
             # only support external image here.
             if not src:
                 logger.warning("Image src is empty")
             text_params["src"] = src
             text_params["data-notion-file-upload-id"] = notion_file_upload_id
+            text_params["data-mime-type"] = mime_type
         return
 
     # https://developers.notion.com/reference/request-limits
@@ -210,6 +214,7 @@ class Html2JsonBase:
     def generate_image(self, **kwargs):
         source = kwargs.get("src", "")
         notion_file_upload_id = kwargs.get("data-notion-file-upload-id")
+        mime_type = kwargs.get('data-mime-type')
         if (not source or not is_valid_url(source)) and not notion_file_upload_id:
             return
         self.import_stat.add_notion_image(source)
@@ -227,6 +232,9 @@ class Html2JsonBase:
             image_block["image"]["type"] = "file_upload"
             image_block["image"].pop("external")
             image_block["image"].update(file_upload=dict(id=notion_file_upload_id))
+        if mime_type and not mime_type.startswith('image/'):
+            image_block["type"] = "file"
+            image_block["file"] = image_block.pop("image")
         return image_block
 
     def generate_text(self, **kwargs):
