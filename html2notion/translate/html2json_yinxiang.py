@@ -57,7 +57,7 @@ class Html2JsonYinXiang(Html2JsonBase):
             else:
                 self.import_stat.add_skip_tag(child.get_text())
                 logger.warning(f"Unknown tag : {child}")
-    
+
     def convert_code(self, soup):
         json_obj = {
             "object": "block",
@@ -82,6 +82,9 @@ class Html2JsonYinXiang(Html2JsonBase):
         language = css_dict.get('--en-codeblockLanguage', 'plain text')
         json_obj["code"]["language"] = language
         return json_obj
+
+    def convert_blockquote(self, soup):
+        return self.convert_quote(soup)
 
     def convert_quote(self, soup):
         json_obj = {
@@ -151,6 +154,12 @@ class Html2JsonYinXiang(Html2JsonBase):
             return Block.HEADING.value
         elif tag_name == 'table' or self._check_is_table(single_tag):
             return Block.TABLE.value
+        elif tag_name == 'quote':
+            return Block.QUOTE.value
+        elif tag_name == 'blockquote':
+            return Block.QUOTE.value
+        elif tag_name == 'pre':
+            return Block.CODE.value
         
         css_dict = Html2JsonBase.get_tag_style(single_tag)
         if css_dict.get('--en-blockquote', None) == 'true':
