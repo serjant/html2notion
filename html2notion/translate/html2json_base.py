@@ -2,7 +2,7 @@ import re
 import os
 import copy
 from collections import namedtuple
-from bs4 import NavigableString, Tag, PageElement
+from bs4 import NavigableString, Tag, PageElement, BeautifulSoup
 from enum import Enum
 from ..utils import logger, config, is_valid_url
 
@@ -444,6 +444,10 @@ class Html2JsonBase:
         text_obj = self.generate_inline_obj(soup)
         if text_obj:
             rich_text.extend(text_obj)
+            print(str(soup))
+            if soup.get('data-toggle'):
+                json_obj["type"] = "toggle"
+                json_obj.update(toggle=json_obj.pop(heading_level), children=[])
             return json_obj
         return None
 
@@ -505,7 +509,9 @@ class Html2JsonBase:
         if not tr_tags:
             logger.error(f"No tr found in {soup}")
             return
-        
+
+        table = soup.find('table')
+        is_collapsible = table.get("data-collapsible", False)
         table_width = len(tr_tags[0].find_all('td'))
         has_header = False
         for tr in tr_tags:
@@ -533,6 +539,20 @@ class Html2JsonBase:
                 "children": table_rows,
             }
         }
+
+        '''
+        data_caption = table.get("data-caption")
+        if is_collapsible and data_caption:
+            print(str(data_caption))
+            data_caption_soup = BeautifulSoup(data_caption, 'html.parser')
+            heading_tag = data_caption_soup.find(True)
+            if heading_tag:
+                block = self.convert_heading(heading_tag)
+                if block and block.get('type') == 'toggle':
+                    children = block.get('children', [])
+                    children.append(table_obj)
+                    return block
+        '''
         return table_obj
 
     @staticmethod
