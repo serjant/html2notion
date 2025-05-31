@@ -512,9 +512,10 @@ class Html2JsonBase:
             if text_obj:
                 for item in text_obj:
                     if item.get("object") == "block" and item.get("type") in {"image", "file"}:
-                        json_obj[list_type].update(children=[])
-                        children = json_obj[list_type]["children"]
-                        children.append(item)
+                        print("Skipping image/file in bulleted list children, because they are not allowed")
+                        #json_obj[list_type].update(children=[])
+                        #children = json_obj[list_type]["children"]
+                        #children.append(item)
                     else:
                         rich_text.append(item)
         return json_obj
