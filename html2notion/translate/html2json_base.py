@@ -484,13 +484,12 @@ class Html2JsonBase:
         json_obj = {
             "object": "block",
             list_type: {
-                "rich_text": [],
-                "children": []
+                "rich_text": []
             },
             "type": list_type,
         }
         rich_text = json_obj[list_type]["rich_text"]
-        children = json_obj[list_type]["children"]
+
         top_level_lists = []
 
         for tag in soup.find_all(['ul', 'ol'], recursive=True):
@@ -498,7 +497,8 @@ class Html2JsonBase:
                 top_level_lists.append(tag)
 
         if top_level_lists:
-            print(top_level_lists)
+            json_obj[list_type].update(children=[])
+            children = json_obj[list_type]["children"]
             for top_level_list in top_level_lists:
                 list_type = None
                 if top_level_list.name == 'ol':
@@ -506,12 +506,14 @@ class Html2JsonBase:
                 elif top_level_list.name == 'ul':
                     list_type = "bulleted_list_item"
                 converted_list_item = self.convert_list_items(top_level_list, list_type)
-                children.append(converted_list_item)
+                children.extend(converted_list_item)
         else:
             text_obj = self.generate_inline_obj(soup)
             if text_obj:
                 for item in text_obj:
                     if item.get("object") == "block" and item.get("type") in {"image", "file"}:
+                        json_obj[list_type].update(children=[])
+                        children = json_obj[list_type]["children"]
                         children.append(item)
                     else:
                         rich_text.append(item)
