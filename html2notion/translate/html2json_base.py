@@ -547,8 +547,7 @@ class Html2JsonBase:
             logger.error(f"No tr found in {soup}")
             return
 
-        table = soup.find('table')
-        is_collapsible = table.get("data-collapsible", False)
+        is_collapsible = soup.get("data-collapsible", False)
         table_width = len(tr_tags[0].find_all('td'))
         has_header = False
         for tr in tr_tags:
