@@ -448,6 +448,17 @@ class Html2JsonBase:
             if soup.get('data-toggle'):
                 json_obj["type"] = "toggle"
                 json_obj.update(toggle=json_obj.pop(heading_level), children=[])
+
+            file_blocks = []
+            cleaned_elements = []
+            for item in rich_text:
+                if item.get("type") == "image" and item.get("image", {}).get("type") == "file_upload":
+                    file_blocks.append(item)
+                else:
+                    cleaned_elements.append(item)
+            json_obj[heading_level]["rich_text"] = cleaned_elements
+            if file_blocks:
+                json_obj[heading_level].update(children=file_blocks)
             return json_obj
         return None
 
@@ -513,9 +524,9 @@ class Html2JsonBase:
                 for item in text_obj:
                     if item.get("object") == "block" and item.get("type") in {"image", "file"}:
                         print("Skipping image/file in bulleted list children, because they are not allowed")
-                        #json_obj[list_type].update(children=[])
-                        #children = json_obj[list_type]["children"]
-                        #children.append(item)
+                        json_obj[list_type].update(children=[])
+                        children = json_obj[list_type]["children"]
+                        children.append(item)
                     else:
                         rich_text.append(item)
         return json_obj
