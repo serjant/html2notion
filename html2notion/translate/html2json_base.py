@@ -1,3 +1,4 @@
+import json
 import re
 import os
 import copy
@@ -552,9 +553,11 @@ class Html2JsonBase:
         has_header = False
         for tr in tr_tags:
             td_tags = tr.find_all('td')
+            is_th_tags = False
             if not td_tags:
                 td_tags = tr.find_all('th')
                 has_header = True
+                is_th_tags = True
             table_width = max(table_width, len(td_tags))
             one_row = {
                 "type": "table_row",
@@ -564,7 +567,46 @@ class Html2JsonBase:
             }
             for td in td_tags:
                 col = self.generate_inline_obj(td)
-                one_row["table_row"]["cells"].append(col)
+                files_group = {
+                    "type": "files",
+                    "files": []
+                }
+
+                if not is_th_tags:
+                    remaining = []
+                    for item in col:
+                        if (
+                                isinstance(item, dict)
+                                and item.get("type") in ["image", "file"]
+                                and "file_upload" in item.get(item["type"], {})
+                        ):
+                            files_group["files"].append(item)
+                        else:
+                            remaining.append(item)
+
+                    if files_group["files"]:
+                        remaining.insert(0, files_group)
+                    one_row["table_row"]["cells"].append(remaining)
+                else:
+                    data_format = td.get('data-coda-column-format')
+                    if data_format and len(col) > 0:
+                        try:
+                            data_format = json.loads(data_format)
+                            print(data_format)
+                            if data_format.get("type") == "imageAttachments":
+                                col[0].update(type="files")
+                            elif data_format.get("type") == "dp":
+                                col[0].update(type="date")
+                            elif data_format.get("type") == "email":
+                                col[0].update(type="email")
+                            elif data_format.get("type") == "sl":
+                                if data_format.get("multiple"):
+                                    col[0].update(type="multi_select")
+                                else:
+                                    col[0].update(type="select")
+                        except Exception as e:
+                            pass
+                    one_row["table_row"]["cells"].append(col)
             table_rows.append(one_row)
 
         table_obj = {
