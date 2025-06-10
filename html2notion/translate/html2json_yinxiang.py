@@ -140,7 +140,9 @@ class Html2JsonYinXiang(Html2JsonBase):
 
         # There are priorities here. It is possible to hit multiple targets 
         # at the same time, and the first one takes precedence.
-        if self._check_is_todo(single_tag):
+        if tag_name == 'table' or self._check_is_table(single_tag):
+            return Block.TABLE.value
+        elif self._check_is_todo(single_tag):
             return Block.TO_DO.value
         elif tag_name == 'hr':
             return Block.DIVIDER.value
@@ -152,8 +154,6 @@ class Html2JsonYinXiang(Html2JsonBase):
             return Block.PARAGRAPH.value
         elif tag_name in ('h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
             return Block.HEADING.value
-        elif tag_name == 'table' or self._check_is_table(single_tag):
-            return Block.TABLE.value
         elif tag_name == 'quote':
             return Block.QUOTE.value
         elif tag_name == 'blockquote':
