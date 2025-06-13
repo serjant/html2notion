@@ -42,7 +42,7 @@ class NotionTableConverter:
                         for opt in td.find_all("option")
                         if opt.has_attr("selected")
                     ]
-                    if selected_option:
+                    if select_options:
                         row_properties[col_name] = {
                             "select": {"name": selected_options[0]}
                         }
