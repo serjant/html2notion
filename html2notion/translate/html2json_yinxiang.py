@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup, Tag
 from ..utils import logger, DateStrToISO8601
-from ..translate.html2json_base import Html2JsonBase, Block 
+from ..translate.html2json_base import Html2JsonBase, Block
 
 YinXiang_Type = "yinxiang"
 
@@ -133,12 +133,12 @@ class Html2JsonYinXiang(Html2JsonBase):
                 json_obj["to_do"]["checked"] = True
             to_do_blocks.append(json_obj)
         return to_do_blocks
-  
+
     def get_block_type(self, single_tag):
         tag_name = single_tag.name
         style = single_tag.get('style') if tag_name else ""
 
-        # There are priorities here. It is possible to hit multiple targets 
+        # There are priorities here. It is possible to hit multiple targets
         # at the same time, and the first one takes precedence.
         if tag_name == 'table' or self._check_is_table(single_tag):
             return Block.TABLE.value
@@ -160,7 +160,7 @@ class Html2JsonYinXiang(Html2JsonBase):
             return Block.QUOTE.value
         elif tag_name == 'pre':
             return Block.CODE.value
-        
+
         css_dict = Html2JsonBase.get_tag_style(single_tag)
         if css_dict.get('--en-blockquote', None) == 'true':
             return Block.QUOTE.value
@@ -189,5 +189,6 @@ class Html2JsonYinXiang(Html2JsonBase):
         if input_tag and isinstance(input_tag, Tag) and input_tag.get('type') == 'checkbox':
             return True
         return False
+
 
 Html2JsonBase.register(YinXiang_Type, Html2JsonYinXiang)

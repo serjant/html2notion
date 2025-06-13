@@ -3,8 +3,13 @@ import re
 import os
 import copy
 from collections import namedtuple
+from typing import Dict, Any
+
 from bs4 import NavigableString, Tag, PageElement, BeautifulSoup
 from enum import Enum
+
+from html2notion.utils.table import NotionTableConverter
+
 from ..utils import logger, config, is_valid_url
 
 
@@ -76,6 +81,7 @@ class Html2JsonBase:
         else:
             notion_database_id = config.get('notion', dict(notion='default', database_id="1"))['database_id']
         self.parent = {"type": "database_id", "database_id": notion_database_id}
+        self.is_databases_conversion = False
 
     def process(self):
         raise NotImplementedError("Subclasses must implement this method")
@@ -532,16 +538,13 @@ class Html2JsonBase:
                         rich_text.append(item)
         return json_obj
 
-    """
-    <div>
-    <div><br /></div>
-    <table> <thead> </thead><tbody> <tr> <td> </td> </tr> </tbody> </table>
-    <div><br /></div>
-    </div>
-    """
 
     # ../examples/insert_table.ipynb
     def convert_table(self, soup):
+        if self.is_databases_conversion:
+            notion_converter = NotionTableConverter(soup)
+            notion_converter.convert_to_notion_database_schema()
+            return notion_converter.data
         table_rows = []
         tr_tags = soup.find_all('tr')
         if not tr_tags:
@@ -571,9 +574,10 @@ class Html2JsonBase:
                     "type": "files",
                     "files": []
                 }
-
+                data_column_type = td.get('data-column-type')
                 if not is_th_tags:
                     remaining = []
+
                     for item in col:
                         if (
                                 isinstance(item, dict)
@@ -588,24 +592,15 @@ class Html2JsonBase:
                         remaining.insert(0, files_group)
                     one_row["table_row"]["cells"].append(remaining)
                 else:
-                    data_format = td.get('data-coda-column-format')
-                    if data_format and len(col) > 0:
-                        try:
-                            data_format = json.loads(data_format)
-                            print(data_format)
-                            if data_format.get("type") == "imageAttachments":
-                                col[0].update(type="files")
-                            elif data_format.get("type") == "dp":
-                                col[0].update(type="date")
-                            elif data_format.get("type") == "email":
-                                col[0].update(type="email")
-                            elif data_format.get("type") == "sl":
-                                if data_format.get("multiple"):
-                                    col[0].update(type="multi_select")
-                                else:
-                                    col[0].update(type="select")
-                        except Exception as e:
-                            pass
+                    if data_column_type and len(col) > 0:
+                        if data_column_type == "image":
+                            col[0].update(type="files")
+                        elif data_column_type == "date":
+                            col[0].update(type="date")
+                        elif data_column_type == "email":
+                            col[0].update(type="email")
+                        elif data_column_type == "select":
+                            col[0].update(type="select")
                     one_row["table_row"]["cells"].append(col)
             table_rows.append(one_row)
 
@@ -618,19 +613,6 @@ class Html2JsonBase:
             }
         }
 
-        '''
-        data_caption = table.get("data-caption")
-        if is_collapsible and data_caption:
-            print(str(data_caption))
-            data_caption_soup = BeautifulSoup(data_caption, 'html.parser')
-            heading_tag = data_caption_soup.find(True)
-            if heading_tag:
-                block = self.convert_heading(heading_tag)
-                if block and block.get('type') == 'toggle':
-                    children = block.get('children', [])
-                    children.append(table_obj)
-                    return block
-        '''
         return table_obj
 
     @staticmethod
