@@ -146,6 +146,9 @@ class Html2JsonBase:
             if not href:
                 logger.warning("Link href is empty")
             text_params["url"] = href
+            database_id = tag_soup.get("data-database-id", "")
+            if database_id:
+                text_params["database_id"] = database_id
         elif tag_name == 'img':
             src = tag_soup.get('src', "")
             notion_file_upload_id = tag_soup.get('data-notion-file-upload-id')
@@ -198,17 +201,45 @@ class Html2JsonBase:
                             res_obj.append(text_obj)
                     text_obj = None
             if text_obj:
-                res_obj.append(text_obj)
+                if isinstance(text_obj, list):
+                    res_obj.extend(text_obj)
+                else:
+                    res_obj.append(text_obj)
         return res_obj
 
     def generate_link(self, **kwargs):
         link_url = kwargs.get("url", "")
         plain_text = kwargs.get("plain_text", "")
+        database_id = kwargs.get("database_id", "")
         if not plain_text or not is_valid_url(link_url):
             return
 
         link_url = link_url[:self.URL_MAX_LENGTH]
         self.import_stat.add_notion_text(plain_text)
+        if database_id:
+            data = []
+            if plain_text:
+                data.append({
+                    "object": "block",
+                    "type": "heading_3",
+                    "heading_3": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": plain_text},
+                            }
+                        ]
+                    }
+                })
+            data.append({
+                "object": "block",
+                "type": "link_to_page",
+                "link_to_page": {
+                    "type": "database_id",
+                    "database_id": database_id
+                }
+            })
+            return data
         return {
             "href": link_url,
             "plain_text": plain_text,
@@ -537,7 +568,6 @@ class Html2JsonBase:
                     else:
                         rich_text.append(item)
         return json_obj
-
 
     # ../examples/insert_table.ipynb
     def convert_table(self, soup):
