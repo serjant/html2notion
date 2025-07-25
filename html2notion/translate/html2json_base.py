@@ -571,7 +571,8 @@ class Html2JsonBase:
 
     # ../examples/insert_table.ipynb
     def convert_table(self, soup):
-        if self.is_databases_conversion:
+        grid_configuration_set = soup.get('data-coda-grid-configuration-set')
+        if self.is_databases_conversion or (grid_configuration_set and grid_configuration_set == "SimpleTable"):
             notion_converter = NotionTableConverter(soup)
             notion_converter.convert_to_notion_database_schema()
             return notion_converter.data
