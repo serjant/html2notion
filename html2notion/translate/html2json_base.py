@@ -217,29 +217,14 @@ class Html2JsonBase:
         link_url = link_url[:self.URL_MAX_LENGTH]
         self.import_stat.add_notion_text(plain_text)
         if database_id:
-            data = []
-            if plain_text:
-                data.append({
-                    "object": "block",
-                    "type": "heading_3",
-                    "heading_3": {
-                        "rich_text": [
-                            {
-                                "type": "text",
-                                "text": {"content": plain_text},
-                            }
-                        ]
-                    }
-                })
-            data.append({
+            return {
                 "object": "block",
                 "type": "link_to_page",
                 "link_to_page": {
                     "type": "database_id",
                     "database_id": database_id
                 }
-            })
-            return data
+            }
         return {
             "href": link_url,
             "plain_text": plain_text,
