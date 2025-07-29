@@ -630,7 +630,7 @@ class Html2JsonBase:
                 "has_column_header": has_header,
                 "table_width": table_width,
                 "children": table_rows,
-                "caption": soup.get("data-caption")
+                "caption": caption
             }
         }
 
