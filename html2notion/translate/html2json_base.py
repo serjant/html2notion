@@ -567,7 +567,11 @@ class Html2JsonBase:
             logger.error(f"No tr found in {soup}")
             return
 
-        is_collapsible = soup.get("data-collapsible", False)
+        caption = soup.get("data-caption")
+        if not caption:
+            table = soup.find("table")
+            if table:
+                caption = table.get('data-caption')
         table_width = len(tr_tags[0].find_all('td'))
         has_header = False
         for tr in tr_tags:
@@ -626,6 +630,7 @@ class Html2JsonBase:
                 "has_column_header": has_header,
                 "table_width": table_width,
                 "children": table_rows,
+                "caption": soup.get("data-caption")
             }
         }
 
